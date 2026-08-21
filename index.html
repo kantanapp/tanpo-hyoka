@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="robots" content="noindex,nofollow">
+<title>担保評価メモ｜社内検討用プロトタイプ</title>
+<style>
+:root{
+  --ink:#16202b; --pap:#f7f8f6; --rule:#dfe3dd; --sub:#6b7671; --sea:#1f4e5f;
+  --ok:#2f6b4f; --wa:#a8622b; --ng:#8c3a3a; --wash:#eef1ec;
+  --font-body:"Hiragino Sans","Noto Sans JP",system-ui,-apple-system,sans-serif;
+  --font-disp:"Hiragino Mincho ProN","Yu Mincho",YuMincho,"Noto Serif JP",serif;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:var(--font-body);background:var(--pap);color:var(--ink);
+  -webkit-font-smoothing:antialiased;line-height:1.6;padding-bottom:40px}
+.shell{max-width:720px;margin:0 auto;background:var(--pap);min-height:100vh}
+
+header{padding:22px 18px 14px;border-bottom:2px solid var(--ink)}
+h1{font-family:var(--font-disp);font-size:24px;letter-spacing:.14em;font-weight:600}
+.sub{font-size:10.5px;letter-spacing:.18em;color:var(--sub);margin-top:6px}
+
+nav{display:flex;background:#fff;border-bottom:1px solid var(--rule);
+  overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none}
+nav::-webkit-scrollbar{display:none}
+nav button{flex:0 0 auto;padding:13px 15px;font-size:13px;background:none;border:0;
+  color:var(--sub);border-bottom:2px solid transparent;cursor:pointer;
+  font-family:inherit;letter-spacing:.06em;white-space:nowrap}
+nav button[aria-selected=true]{color:var(--sea);border-bottom-color:var(--sea);font-weight:700}
+nav button:focus-visible{outline:2px solid var(--sea);outline-offset:-3px}
+
+.panel{padding:4px 16px;display:none}
+.panel.on{display:block}
+
+.sec{margin:22px 0}
+.sec>h2{font-size:11px;letter-spacing:.16em;color:var(--sub);font-weight:700;
+  margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--rule)}
+.row{display:flex;align-items:center;gap:10px;padding:7px 0}
+.row label.lb{font-size:12.5px;width:112px;flex:none;color:var(--sub);line-height:1.45}
+.fd{flex:1;min-width:0}
+input,select,textarea{width:100%;padding:9px 10px;border:1px solid var(--rule);
+  border-radius:3px;background:#fff;font-size:14px;font-family:inherit;color:var(--ink)}
+textarea{min-height:64px;resize:vertical;line-height:1.6}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--sea);outline-offset:-1px}
+.pair{display:flex;align-items:center;gap:7px}
+.u{font-size:11.5px;color:var(--sub);white-space:nowrap}
+.tri{display:flex;gap:5px}
+
+.chips{display:flex;flex-wrap:wrap;gap:6px;margin-bottom:8px}
+.chip{padding:7px 10px;border:1px solid var(--rule);background:#fff;border-radius:3px;
+  font-size:12px;font-family:inherit;color:var(--sub);cursor:pointer;
+  display:inline-flex;gap:5px;align-items:center}
+.chip.on{border-color:var(--sea);background:var(--sea);color:#fff}
+.chip.ng{border-color:var(--ng);background:var(--ng);color:#fff}
+.chip small{font-size:10px;opacity:.75}
+
+.btn{width:100%;padding:14px;background:var(--ink);color:#fff;border:0;border-radius:3px;
+  font-size:14px;font-family:inherit;letter-spacing:.1em;cursor:pointer;margin-top:8px}
+.btn:active{opacity:.82}
+.btn.ghost{background:#fff;color:var(--ink);border:1px solid var(--ink)}
+
+/* サマリー */
+.sum{border:1px solid var(--rule);border-top:4px solid var(--ink);background:#fff;
+  padding:18px 16px 15px;margin-top:16px}
+.sum.ok{border-top-color:var(--ok)} .sum.wa{border-top-color:var(--wa)} .sum.ng{border-top-color:var(--ng)}
+.verdict{font-size:14px;font-weight:700;letter-spacing:.12em;display:flex;align-items:center;gap:8px}
+.sum.ok .verdict{color:var(--ok)} .sum.wa .verdict{color:var(--wa)} .sum.ng .verdict{color:var(--ng)}
+.dot{width:9px;height:9px;border-radius:50%;background:currentColor;flex:none}
+.sum .lab{font-size:11px;letter-spacing:.16em;color:var(--sub);margin-top:14px}
+.big{font-family:var(--font-disp);font-size:30px;font-weight:600;margin-top:2px;
+  font-variant-numeric:tabular-nums;line-height:1.25}
+.big .t{font-size:17px;margin:0 5px;color:var(--sub)}
+.big .m{font-size:14px;margin-left:5px;color:var(--sub)}
+.reason{font-size:12px;color:var(--sub);margin-top:8px}
+.bar{position:relative;height:9px;background:var(--wash);border-radius:2px;margin:16px 0 6px}
+.bar i{position:absolute;left:0;top:0;bottom:0;border-radius:2px 0 0 2px;
+  background:repeating-linear-gradient(45deg,#b9c0bb 0 4px,#cdd3ce 4px 8px)}
+.bar u{position:absolute;top:-4px;bottom:-4px;width:2px;background:var(--ink)}
+.barlg{display:flex;justify-content:space-between;font-size:10.5px;color:var(--sub)}
+.meta{font-size:11.5px;color:var(--sub);margin-top:12px;padding-top:10px;border-top:1px solid var(--rule)}
+
+.ln{display:flex;justify-content:space-between;gap:12px;padding:7px 0;font-size:13px;align-items:baseline}
+.ln span:first-child{color:var(--sub);line-height:1.45}
+.ln span:last-child{font-variant-numeric:tabular-nums;white-space:nowrap}
+.ln.b{font-weight:700} .ln.b span:first-child{color:var(--ink)} .ln.b span:last-child{font-size:15px}
+.ln .neg{color:var(--ng)}
+.hr{height:1px;background:var(--rule);margin:8px 0}
+
+ul.ck{list-style:none}
+ul.ck li{font-size:12.5px;line-height:1.65;padding:8px 0 8px 15px;position:relative;
+  border-bottom:1px dotted var(--rule)}
+ul.ck li:last-child{border-bottom:0}
+ul.ck li::before{content:"";position:absolute;left:0;top:14px;width:5px;height:5px;
+  background:var(--wa);border-radius:50%}
+.empty{font-size:12.5px;color:var(--sub)}
+
+table{width:100%;border-collapse:collapse;font-size:12px}
+td,th{padding:8px 6px;border-bottom:1px solid var(--rule);vertical-align:top;
+  line-height:1.5;text-align:left}
+th{font-size:10.5px;color:var(--sub);font-weight:700;letter-spacing:.08em}
+td.d{width:52px;color:var(--sea);font-weight:700;font-size:10.5px}
+td.dt{width:56px;color:var(--sub);font-variant-numeric:tabular-nums}
+.rs{color:var(--sub);margin-top:2px}
+.note{font-size:10.5px;color:var(--sub);margin-top:8px}
+
+/* 解説 */
+.prose p{font-size:13.5px;line-height:1.85;margin:10px 0}
+.prose h3{font-family:var(--font-disp);font-size:16px;margin:24px 0 6px;letter-spacing:.04em}
+.prose ul{margin:10px 0 10px 18px}
+.prose li{font-size:13.5px;line-height:1.8;margin:4px 0}
+.formula{background:#fff;border:1px solid var(--rule);border-left:3px solid var(--sea);
+  padding:14px 14px;margin:14px 0;font-size:12.5px;line-height:2;font-variant-numeric:tabular-nums}
+.formula b{font-weight:700}
+.callout{background:var(--wash);padding:13px 14px;font-size:12.5px;line-height:1.8;
+  margin:14px 0;border-radius:3px}
+.callout strong{display:block;margin-bottom:4px;font-size:11px;letter-spacing:.14em;color:var(--sub)}
+.tag{display:inline-block;font-size:10px;letter-spacing:.1em;padding:2px 7px;border-radius:2px;
+  background:var(--wa);color:#fff;vertical-align:2px;margin-left:6px}
+
+.q{border-bottom:1px solid var(--rule);padding:12px 0}
+.q:last-child{border-bottom:0}
+.q .qt{font-size:13px;line-height:1.6;margin-bottom:7px}
+.q .qt em{font-style:normal;color:var(--sea);font-weight:700;margin-right:6px;font-size:11px}
+.q .hint{font-size:11px;color:var(--sub);margin-top:5px;line-height:1.6}
+.ask{background:#fff;border:1px solid var(--rule);padding:14px;margin:12px 0;border-radius:3px}
+.ask h4{font-size:12px;letter-spacing:.1em;margin-bottom:6px}
+.ask p{font-size:12.5px;color:var(--sub);line-height:1.75}
+
+footer{font-size:10.5px;color:var(--sub);text-align:center;line-height:1.8;
+  margin:26px 18px 0;padding-top:14px;border-top:1px solid var(--rule)}
+@media(max-width:370px){ .row label.lb{width:92px;font-size:12px} .big{font-size:26px} }
+@media(prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+<header>
+  <h1>担保評価メモ</h1>
+  <p class="sub">社内検討用プロトタイプ　v0.2　／　株式会社gen</p>
+</header>
+
+<nav role="tablist">
+  <button role="tab" data-t="input"  aria-selected="true">入力</button>
+  <button role="tab" data-t="memo"   aria-selected="false">評価メモ</button>
+  <button role="tab" data-t="params" aria-selected="false">基準値</button>
+  <button role="tab" data-t="doc"    aria-selected="false">考え方</button>
+  <button role="tab" data-t="hear"   aria-selected="false">ヒアリング</button>
+</nav>
+
+<!-- ══════════ 入力 ══════════ -->
+<div class="panel on" id="p-input">
+  <section class="sec"><h2>物件</h2>
+    <div class="row"><label class="lb" for="address">所在</label><div class="fd">
+      <input id="address" value="那覇市おもろまち3丁目"></div></div>
+    <div class="row"><label class="lb" for="area">エリア区分</label><div class="fd">
+      <select id="area"></select></div></div>
+    <div class="row"><label class="lb" for="tsubo">土地面積</label><div class="fd">
+      <div class="pair"><input id="tsubo" type="number" value="42"><span class="u" id="sqm"></span></div></div></div>
+    <div class="row"><label class="lb" for="use">利用状況</label><div class="fd">
+      <select id="use"><option>自宅</option><option>賃貸中</option><option>空き家</option><option>事業用</option></select></div></div>
+  </section>
+
+  <section class="sec"><h2>建物</h2>
+    <div class="row"><label class="lb" for="hasBldg">建物</label><div class="fd">
+      <select id="hasBldg"><option value="1">あり</option><option value="0">土地のみ</option></select></div></div>
+    <div id="bldgFields">
+      <div class="row"><label class="lb" for="kouzou">構造</label><div class="fd">
+        <select id="kouzou"></select></div></div>
+      <div class="row"><label class="lb" for="chikunen">築年数</label><div class="fd">
+        <div class="pair"><input id="chikunen" type="number" value="28"><span class="u">年</span></div></div></div>
+      <div class="row"><label class="lb" for="nobiyuka">延床面積</label><div class="fd">
+        <div class="pair"><input id="nobiyuka" type="number" value="30"><span class="u">坪</span></div></div></div>
+    </div>
+  </section>
+
+  <section class="sec"><h2>現地条件</h2>
+    <div class="chips" id="hoseiChips"></div>
+    <div class="chips" id="stopChips"></div>
+  </section>
+
+  <section class="sec"><h2>既存債権</h2>
+    <div class="row"><label class="lb" for="zandaka">残債</label><div class="fd">
+      <div class="pair"><input id="zandaka" type="number" value="1450"><span class="u">万円</span></div></div></div>
+    <div class="row"><label class="lb" for="juni">設定順位</label><div class="fd">
+      <select id="juni"></select></div></div>
+    <div class="row"><label class="lb" for="evid">残債の根拠</label><div class="fd">
+      <select id="evid"><option>残高証明</option><option selected>返済予定表</option><option>申告ベース</option></select></div></div>
+    <div class="row"><label class="lb" for="kibou">希望額</label><div class="fd">
+      <div class="pair"><input id="kibou" type="number" value="1800"><span class="u">万円</span></div></div></div>
+  </section>
+
+  <button class="btn" id="toMemo">評価メモを作成</button>
+</div>
+
+<!-- ══════════ 評価メモ ══════════ -->
+<div class="panel" id="p-memo"><div id="memoBody"></div>
+  <button class="btn" id="copyBtn">テキストでコピー</button>
+</div>
+
+<!-- ══════════ 基準値 ══════════ -->
+<div class="panel" id="p-params">
+  <div class="callout" style="margin-top:16px">
+    <strong>この画面について</strong>
+    ここの数字はすべて仮置きです。フェアー様の社内基準を聞き取ったら、この画面の値を差し替えるだけで全体の計算が変わります。プログラムを直す必要はありません。
+  </div>
+  <div id="paramBody"></div>
+</div>
+
+<!-- ══════════ 考え方 ══════════ -->
+<div class="panel" id="p-doc"><div class="prose">
+
+  <section class="sec"><h2>このツールが何をするものか</h2>
+    <p>担保に入る不動産を見て、<b>いくらまで融資できるか</b>を機械的に算出し、社内で決裁を回すときの1枚の資料を自動で作ります。</p>
+    <p>お客様に直接金額を見せるものではありません。社内の審査担当と決裁者が「この物件は検討する価値があるか」を短時間で会話するための材料です。だから<b>100点の精度は不要</b>で、最終判断は人がします。</p>
+    <div class="callout"><strong>設計の軸</strong>
+      数字を当てにいくのではなく、<b>誰がやっても同じ手順で、同じ確認漏れがない状態</b>を作ることを目的にしています。判断ではなく、判断の前の下ごしらえを自動化する、という位置づけです。</div>
+  </section>
+
+  <section class="sec"><h2>計算の流れ</h2>
+    <p>買取査定と違い、担保査定は<b>すでに付いている抵当権を引かないと答えが出ません</b>。評価額がいくら高くても、残債で埋まっていれば貸せる余地はゼロです。この「残りの枠」を担保余力と呼びます。</p>
+    <div class="formula">
+      土地評価　＝ 坪単価 × 土地面積<br>
+      建物評価　＝ 再調達価格 × 延床 × 残存年数比<br>
+      解体費　　＝ 建物の価値がゼロのとき控除<br>
+      補正　　　＝ 角地・旗竿・道路幅・傾斜・浸水<br>
+      ───────────────<br>
+      <b>積算評価額</b><br>
+      　× 処分想定掛け目　→ 処分想定価格<br>
+      　× LTV（順位別）　→ 担保設定可能額<br>
+      　− 既存残債　　　　→ <b>担保余力</b>
+    </div>
+    <p>最後に担保余力に±の幅を持たせてレンジで表示します。1本の数字で断言すると、後から下方修正したときに話がこじれるためです。</p>
+  </section>
+
+  <section class="sec"><h2>なぜ順位で掛け目を変えるのか</h2>
+    <p>第1順位なら競売・任意売却で先に回収できますが、第2順位以降は先順位が満額取った残りしか回りません。回収可能性が下がる分、LTVを絞ります。</p>
+    <ul>
+      <li>第1順位 … 70%</li>
+      <li>第2順位 … 50%</li>
+      <li>第3順位 … 35%</li>
+    </ul>
+    <p>この数字は仮置きです。実際にフェアー様が何%で見ているかを聞き取って差し替えます。<span class="tag">要ヒアリング</span></p>
+  </section>
+
+  <section class="sec"><h2>足切り条件を先に置く理由</h2>
+    <p>再建築不可・接道2m未満・市街化調整区域・面積下限。これらに当たる物件は、評価額を計算しても意味がありません。<b>計算に入る前に止める</b>ことで、実務で一番時間を食う「調べたけど結局ダメだった」がゼロになります。</p>
+    <p>判定は「否」ではなく<b>「該当なし」</b>と表示します。断定を避け、人が覆せる余地を残すためです。</p>
+  </section>
+
+  <section class="sec"><h2>数字より「確認が必要な点」が本体</h2>
+    <p>残高証明が未取得、第2順位、共有名義、浸水想定区域、耐用年数超過、希望額の超過。これらは自動で拾い出して並べます。</p>
+    <p>金額はあくまで機械的な試算ですが、この確認リストが揃っていれば決裁の会話が確実に早くなります。担当者ごとの見落としもここで消えます。<b>ここに何を足すかは、実際に見落として困った経験を聞くのが一番早い</b>ので、ヒアリングで拾います。</p>
+  </section>
+
+  <section class="sec"><h2>価格の情報源について</h2>
+    <p>現在、坪単価は仮置きの固定値です。実データの候補は下記で、<b>まだ決めていません</b>。</p>
+    <table>
+      <tr><th>候補</th><th>実勢との近さ</th><th>自動取得</th></tr>
+      <tr><td>路線価（国税庁）</td><td>乖離あり</td><td>図面のみ・不可</td></tr>
+      <tr><td>公示地価・基準地価</td><td>中</td><td>API可</td></tr>
+      <tr><td>不動産取引価格情報</td><td>実取引</td><td>API可</td></tr>
+      <tr><td>成約価格情報</td><td>実取引</td><td>API可</td></tr>
+      <tr><td>レインズ</td><td>高</td><td>公開APIなし</td></tr>
+      <tr><td>社内の過去取引</td><td>高</td><td>提供次第</td></tr>
+    </table>
+    <p>坪単価は計算式の外にパラメータとして出してあるので、<b>情報源が後から決まっても作り直しになりません</b>。「基準値」画面の数字を差し替えるだけです。</p>
+  </section>
+
+  <section class="sec"><h2>なぜ単価を計算式の外に出しているのか</h2>
+    <p>ここが今回の設計で一番の分かれ道だったので、理由を残しておきます。単価の扱い方には2通りあり、<b>意図して後者を選んでいます</b>。</p>
+
+    <h3>A案　路線価を計算に組み込む</h3>
+    <p>最初に「路線価で評価する」と決めて、その手順をそのまま実装するやり方です。</p>
+    <div class="formula">
+      路線価図から該当路線の価額を読む<br>
+      　↓ 奥行価格補正率表を引く<br>
+      　↓ 側方路線影響加算（角地・準角地）<br>
+      　↓ 二方路線影響加算<br>
+      　↓ 不整形地補正・間口狭小補正<br>
+      　↓ 借地権割合（記号A〜G）を判定<br>
+      　↓ ÷0.8 で時価水準に戻す<br>
+      ───────────────<br>
+      <b>土地評価額</b>
+    </div>
+    <p>一見きちんとして見えますが、この式は<b>路線価という制度に固有の処理でできています</b>。補正率表も借地権割合の記号も、路線価にしか存在しません。</p>
+
+    <h3>B案　単価を1個の数字に潰す（採用）</h3>
+    <div class="formula">
+      <b>坪単価</b>　←　ここは外から与えられる数字1個<br>
+      　↓<br>
+      土地評価 ＝ 坪単価 × 土地面積<br>
+      　↓ 建物 → 解体費 → 補正 → 処分掛け目<br>
+      　↓ LTV → 既存残債<br>
+      ───────────────<br>
+      <b>担保余力</b>
+    </div>
+    <p>この式は坪単価の<b>出どころを一切問いません</b>。手で入れた数字でも、公示地価から計算した数字でも、取引事例の平均でも、同じように動きます。</p>
+
+    <div class="callout"><strong>なぜB案にしたか</strong>
+      A案で作ってしまうと、後から「路線価は実勢と乖離するので取引事例で見たい」となったとき、補正率表も借地権割合の処理も全部引き剥がして組み直しになります。B案なら、単価を作る部分だけを差し替えれば済み、その下の担保余力の計算は1行も変わりません。<b>情報源が決まるのを待たずに、基準や画面の議論を先に進められる</b>のが最大の利点です。</div>
+
+    <h3>ただし、ゼロにはなりません</h3>
+    <p>変わらないのは<b>計算と表示</b>です。実データを繋ぐ段階では「住所を受け取って坪単価を返す」部分を新しく作る必要があり、ここは情報源ごとに癖があります。</p>
+    <ul>
+      <li>路線価 … 図面（画像）でしか公開されておらず、自動取得の手段がない</li>
+      <li>公示地価・基準地価 … 地点数が少なく、間を補間する仕組みが要る</li>
+      <li>取引価格情報 … 住所が字までで番地がなく、時期によって件数にムラがある</li>
+      <li>社内の過去取引 … 記録の形式次第。データ化から始まる可能性がある</li>
+    </ul>
+    <p>この作り込みは情報源が決まってからでないと始められません。だから正確に言えば「作り直しにならない」ではなく、<b>「情報源が決まるまで待たなくていい」</b>という設計です。</p>
+
+    <div class="callout"><strong>順番として</strong>
+      掛け目・LTV・足切り条件・確認事項の中身のほうが、フェアー様との会話では単価より重要です。単価は最後に差し込めばよいので、先に社内基準の側を固めます。</div>
+  </section>
+
+  <section class="sec"><h2>近隣の過去取引について</h2>
+    <p>同一字 → 1km圏 → 3km圏の順に、社内の過去取引を参考情報として並べます。<b>査定の計算式には入れません</b>。係数にすると精度の説明ができなくなり、事例が偏ったときに数字が歪むためです。</p>
+    <p>成約だけでなく<b>見送った案件も並べる</b>のがポイントです。「近くで似た条件を過去に断っている」は担当者が最も知りたい情報で、社内基準が最も濃く出る部分でもあります。</p>
+    <p>そしてこのデータは他社が真似できません。掛け目や足切りはどこでも作れますが、自社の取引履歴はその会社にしかない。使うほど自社専用になっていく、という価値がここにあります。</p>
+  </section>
+
+  <section class="sec"><h2>進め方</h2>
+    <div class="formula">
+      <b>① 社内用ツールを作る</b>　← 今ここ<br>
+      　仮の基準で動くものを先に完成させる<br>
+      ② 実物を見せてヒアリング<br>
+      　白紙で要望を聞かず、動くものを見て答えてもらう<br>
+      ③ 社内基準を差し替えて修正<br>
+      ④ LP・ウェイトリスト（汎用化フェーズ）<br>
+      ⑤ 開発・他社展開
+    </div>
+    <div class="callout"><strong>Mitsukiへ</strong>
+      提案してもらったLP先行の流れは④で生かします。ただし今回はまずフェアー様1社向けなので、需要を測る相手が目の前に1社しかない。順番を入れ替えて、先に動くものを作り、それをLPの素材にする形にしました。画面のスクショが載るLPと、コンセプトだけのLPでは反応が変わるはずです。</div>
+  </section>
+
+</div></div>
+
+<!-- ══════════ ヒアリング ══════════ -->
+<div class="panel" id="p-hear">
+  <div class="callout" style="margin-top:16px">
+    <strong>使い方</strong>
+    フェアー様に伺う項目です。<b>この画面をそのまま渡さず</b>、会話しながら埋めていく想定で作っています。実際にお願いするのは末尾の「ご用意いただきたい資料」の3点だけです。
+  </div>
+  <div id="hearBody"></div>
+  <button class="btn" id="hearCopy">回答をテキストで書き出す</button>
+</div>
+
+<footer>
+  単価・掛け目・LTVはすべて仮置きの数値です。<br>
+  実データおよびフェアー様の社内基準に差し替えて使用してください。
+</footer>
+</div>
+
+<script>
+/* ═══════════ パラメータ（仮置き） ═══════════ */
+const P = {
+  areas:{"久茂地・松山（中心商業）":320,"おもろまち（新都心）":180,"首里（住宅）":95,
+    "小禄（住宅）":88,"識名・繁多川（一般住宅）":72,"首里山川ほか（傾斜地）":55},
+  bldg:{"木造":{unit:18,life:22,demo:5},"軽量鉄骨":{unit:20,life:27,demo:7},"RC":{unit:25,life:47,demo:10}},
+  hosei:{"角地":5,"旗竿地":-10,"前面道路4m未満":-10,"傾斜・擁壁":-15,"浸水想定区域":-5},
+  shobun:85, ltv:{1:70,2:50,3:35}, minTsubo:15, minAmount:300, band:10
+};
+const TSUBO=3.30578, yen=n=>Math.round(n).toLocaleString("ja-JP");
+const NEI=[
+ {d:"同一字",dt:"2024/03",s:"42坪／建物あり",r:"買取 1,850万（坪44万）"},
+ {d:"1km圏",dt:"2023/11",s:"38坪／更地",r:"見送り（共有者同意なし）"},
+ {d:"1km圏",dt:"2023/06",s:"51坪／建物あり",r:"融資 1,200万（第1順位）"}
+];
+const F={hosei:{"角地":true},stop:{}};
+const $=id=>document.getElementById(id);
+
+/* ═══════════ タブ ═══════════ */
+document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{
+  document.querySelectorAll('nav button').forEach(x=>x.setAttribute('aria-selected',x===b));
+  document.querySelectorAll('.panel').forEach(p=>p.classList.remove('on'));
+  $('p-'+b.dataset.t).classList.add('on');
+  if(b.dataset.t==='memo') renderMemo();
+  window.scrollTo(0,0);
+});
+
+/* ═══════════ 入力の初期化 ═══════════ */
+Object.keys(P.areas).forEach(a=>$('area').add(new Option(a,a)));
+$('area').value="おもろまち（新都心）";
+Object.keys(P.bldg).forEach(b=>$('kouzou').add(new Option(b,b)));
+[1,2,3].forEach(j=>$('juni').add(new Option('第'+j+'順位（LTV '+P.ltv[j]+'%）',j)));
+
+$('hoseiChips').innerHTML=Object.keys(P.hosei).map(k=>
+  `<button class="chip${F.hosei[k]?' on':''}" data-h="${k}">${k}<small>${P.hosei[k]>0?'+':''}${P.hosei[k]}%</small></button>`).join('');
+$('stopChips').innerHTML=[["saikenchiku","再建築不可"],["setsudou","接道2m未満"],
+  ["chousei","市街化調整区域"],["kyouyuu","共有名義"]]
+  .map(([k,l])=>`<button class="chip" data-s="${k}">${l}</button>`).join('');
+
+$('hoseiChips').onclick=e=>{const b=e.target.closest('[data-h]');if(!b)return;
+  const k=b.dataset.h;F.hosei[k]=!F.hosei[k];b.classList.toggle('on',F.hosei[k]);};
+$('stopChips').onclick=e=>{const b=e.target.closest('[data-s]');if(!b)return;
+  const k=b.dataset.s;F.stop[k]=!F.stop[k];b.classList.toggle('ng',F.stop[k]);};
+
+const syncSqm=()=>$('sqm').textContent='坪（'+(+$('tsubo').value*TSUBO).toFixed(1)+'㎡）';
+$('tsubo').oninput=syncSqm; syncSqm();
+$('hasBldg').onchange=()=>$('bldgFields').style.display=$('hasBldg').value==='1'?'':'none';
+$('toMemo').onclick=()=>document.querySelector('[data-t=memo]').click();
+
+/* ═══════════ 計算 ═══════════ */
+function calc(){
+  const g=id=>$(id).value, n=id=>+$(id).value||0;
+  const hasB=g('hasBldg')==='1', kou=g('kouzou'), juni=+g('juni');
+  const stops=[];
+  if(F.stop.saikenchiku) stops.push("再建築不可");
+  if(F.stop.setsudou)    stops.push("接道2m未満");
+  if(F.stop.chousei)     stops.push("市街化調整区域");
+  if(n('tsubo')<P.minTsubo) stops.push("土地面積 "+P.minTsubo+"坪未満");
+
+  const unit=P.areas[g('area')]||0, land=unit*n('tsubo');
+  let bldg=0,demo=0,spec=P.bldg[kou];
+  if(hasB&&spec){
+    const ratio=Math.max(0,spec.life-n('chikunen'))/spec.life;
+    bldg=spec.unit*n('nobiyuka')*ratio;
+    if(ratio===0) demo=spec.demo*n('nobiyuka');
+  }
+  const applied=Object.keys(F.hosei).filter(k=>F.hosei[k]);
+  const rate=applied.reduce((a,k)=>a+P.hosei[k],0);
+  const sekisan=(land+bldg-demo)*(1+rate/100);
+  const shobun=sekisan*(P.shobun/100);
+  const ltv=P.ltv[juni]||0, cap=shobun*(ltv/100);
+  const zan=n('zandaka'), yoryoku=cap-zan;
+  const lo=yoryoku*(1-P.band/100), hi=yoryoku*(1+P.band/100);
+
+  let verdict="検討可能", reason="";
+  if(stops.length){verdict="該当なし";reason=stops.join("・");}
+  else if(yoryoku<=0){verdict="該当なし";reason="既存債権が担保設定可能額を上回っています（オーバーローン）";}
+  else if(yoryoku<P.minAmount){verdict="要検討";reason="担保余力が取扱下限（"+P.minAmount+"万円）を下回ります";}
+
+  const ck=[];
+  if(g('evid')!=="残高証明") ck.push("実残債が"+g('evid')+"ベース。残高証明が未取得");
+  if(juni>=2) ck.push("第"+juni+"順位のためLTVを"+ltv+"%に抑制。先順位者の状況確認が必要");
+  if(F.stop.kyouyuu) ck.push("共有名義。共有者全員の同意取得が必要");
+  if(F.hosei["浸水想定区域"]) ck.push("浸水想定区域に該当。処分時の流動性に留意");
+  if(hasB&&spec&&n('chikunen')>=spec.life) ck.push(kou+"の耐用年数（"+spec.life+"年）超過。建物評価はゼロ、解体費を控除");
+  if(g('use')==="賃貸中") ck.push("賃貸中。収益還元による再評価の要否を確認");
+  if(n('kibou')>hi&&yoryoku>0) ck.push("希望額 "+yen(n('kibou'))+"万円が算定レンジ上限を超過");
+
+  return {unit,land,bldg,demo,applied,rate,sekisan,shobun,ltv,cap,zan,yoryoku,lo,hi,
+    verdict,reason,ck,juni,hasB,kou,
+    head:g('address')+"／"+n('tsubo')+"坪／"+(hasB?kou+"築"+n('chikunen')+"年":"土地のみ")+"／"+g('use')};
+}
+
+/* ═══════════ 評価メモ描画 ═══════════ */
+function renderMemo(){
+  const r=calc();
+  const cls=r.verdict==="検討可能"?"ok":r.verdict==="要検討"?"wa":"ng";
+  const pct=r.cap>0?Math.min(100,r.zan/r.cap*100):100;
+  const L=[];
+  L.push(`<div class="sum ${cls}"><div class="verdict"><span class="dot"></span>${r.verdict}</div>`);
+  if(r.verdict==="該当なし"){ L.push(`<p class="reason">${r.reason}</p>`); }
+  else{
+    L.push(`<div class="lab">担保余力</div><div class="big">${yen(Math.max(0,r.lo))}<span class="t">〜</span>${yen(r.hi)}<span class="m">万円</span></div>`);
+    if(r.reason) L.push(`<p class="reason">${r.reason}</p>`);
+  }
+  L.push(`<div class="bar"><i style="width:${pct}%"></i><u style="left:${pct}%"></u></div>
+    <div class="barlg"><span>既存残債 ${yen(r.zan)}万</span><span>設定可能額 ${yen(r.cap)}万</span></div>
+    <div class="meta">${r.head}</div></div>`);
+
+  L.push(`<section class="sec"><h2>担保評価の内訳</h2>`);
+  L.push(ln("土地　"+ $('tsubo').value +"坪 × "+yen(r.unit)+"万/坪", yen(r.land)+"万"));
+  if(r.hasB) L.push(ln("建物　"+r.kou+"築"+$('chikunen').value+"年", r.bldg>0?yen(r.bldg)+"万":"評価ゼロ"));
+  if(r.demo>0) L.push(ln("解体費　"+$('nobiyuka').value+"坪","−"+yen(r.demo)+"万",0,1));
+  if(r.applied.length) L.push(ln("補正　"+r.applied.join("・"),(r.rate>0?"+":"")+r.rate+"%"));
+  L.push(ln("積算評価額",yen(r.sekisan)+"万",1));
+  L.push(`<div class="hr"></div>`);
+  L.push(ln("処分想定価格　×"+P.shobun+"%",yen(r.shobun)+"万"));
+  L.push(ln("担保設定可能額　×LTV "+r.ltv+"%",yen(r.cap)+"万"));
+  L.push(ln("既存債権　第"+r.juni+"順位","−"+yen(r.zan)+"万",0,1));
+  L.push(ln("担保余力",yen(r.yoryoku)+"万",1));
+  L.push(`</section>`);
+
+  L.push(`<section class="sec"><h2>確認が必要な点　${r.ck.length}件</h2>`);
+  L.push(r.ck.length?`<ul class="ck">${r.ck.map(c=>`<li>${c}</li>`).join('')}</ul>`
+    :`<p class="empty">特記事項はありません。</p>`);
+  L.push(`</section>`);
+
+  L.push(`<section class="sec"><h2>近隣の社内取引</h2><table><tbody>`);
+  NEI.forEach(x=>L.push(`<tr><td class="d">${x.d}</td><td class="dt">${x.dt}</td>
+    <td>${x.s}<div class="rs">${x.r}</div></td></tr>`));
+  L.push(`</tbody></table><p class="note">※ サンプル表示。社内取引データは未連携です。</p></section>`);
+  $('memoBody').innerHTML=L.join('');
+}
+const ln=(l,v,b,neg)=>`<div class="ln${b?' b':''}"><span>${l}</span><span class="${neg?'neg':''}">${v}</span></div>`;
+
+/* ═══════════ 基準値画面 ═══════════ */
+function renderParams(){
+  const H=[];
+  H.push(`<section class="sec"><h2>エリア単価（万円/坪）</h2>`);
+  Object.keys(P.areas).forEach(a=>H.push(prow(a,`<input type="number" value="${P.areas[a]}" data-p="areas.${a}">`)));
+  H.push(`</section><section class="sec"><h2>建物　再調達（万円/坪）／耐用年数／解体費（万円/坪）</h2>`);
+  Object.keys(P.bldg).forEach(b=>H.push(prow(b,`<div class="tri">
+    <input type="number" value="${P.bldg[b].unit}" data-p="bldg.${b}.unit">
+    <input type="number" value="${P.bldg[b].life}" data-p="bldg.${b}.life">
+    <input type="number" value="${P.bldg[b].demo}" data-p="bldg.${b}.demo"></div>`)));
+  H.push(`</section><section class="sec"><h2>補正率（%）</h2>`);
+  Object.keys(P.hosei).forEach(h=>H.push(prow(h,`<input type="number" value="${P.hosei[h]}" data-p="hosei.${h}">`)));
+  H.push(`</section><section class="sec"><h2>掛け目・下限</h2>`);
+  H.push(prow("処分想定掛け目（%）",`<input type="number" value="${P.shobun}" data-p="shobun">`));
+  [1,2,3].forEach(j=>H.push(prow("第"+j+"順位 LTV（%）",`<input type="number" value="${P.ltv[j]}" data-p="ltv.${j}">`)));
+  H.push(prow("土地面積の下限（坪）",`<input type="number" value="${P.minTsubo}" data-p="minTsubo">`));
+  H.push(prow("取扱下限（万円）",`<input type="number" value="${P.minAmount}" data-p="minAmount">`));
+  H.push(prow("レンジ幅（±%）",`<input type="number" value="${P.band}" data-p="band">`));
+  H.push(`</section>`);
+  $('paramBody').innerHTML=H.join('');
+}
+const prow=(l,f)=>`<div class="row"><label class="lb">${l}</label><div class="fd">${f}</div></div>`;
+$('paramBody').addEventListener('input',e=>{
+  const p=e.target.dataset.p; if(!p)return;
+  const keys=p.split('.'); let o=P;
+  keys.slice(0,-1).forEach(k=>o=o[k]);
+  o[keys.at(-1)]=+e.target.value;
+  if(keys[0]==='ltv'){ $('juni').innerHTML='';
+    [1,2,3].forEach(j=>$('juni').add(new Option('第'+j+'順位（LTV '+P.ltv[j]+'%）',j))); }
+});
+renderParams();
+
+/* ═══════════ ヒアリング ═══════════ */
+const HEAR=[
+ {t:"A　現状の把握",q:[
+  ["仮査定は月に何件くらいありますか","件／月"],
+  ["1件あたり、誰が・何分かけていますか","例：審査担当が30分"],
+  ["担当者によって結果が変わったことはありますか",""],
+  ["仮査定を出すまでのリードタイム","即日／翌日／数日"],
+  ["申込の入り口は何ですか","メール／電話／持込／紹介"]]},
+ {t:"B　足切り条件（これに当たれば計算せず止める）",q:[
+  ["再建築不可","不可／条件付き可"],
+  ["接道2m未満",""],
+  ["私道・持分なし",""],
+  ["借地権・底地",""],
+  ["市街化調整区域",""],
+  ["土地面積の下限","　坪未満は不可"],
+  ["築年の上限","木造　年／RC　年"],
+  ["共有名義・相続未登記",""],
+  ["差押え・仮登記・税金滞納",""],
+  ["取扱金額のレンジ","　万円 〜 　万円"]]},
+ {t:"C　評価額の作り方",q:[
+  ["土地単価のベースにする指標","路線価／公示地価／取引事例／固都税評価"],
+  ["面積は坪・㎡どちらで管理していますか",""],
+  ["減価要因と減額幅","旗竿／傾斜・擁壁／道路4m未満／角地／ハザード"]]},
+ {t:"D　LTV（評価額に対していくらまで出すか）",q:[
+  ["第1順位のときのLTV","%"],
+  ["第2順位以降はどこまで下げますか","%"],
+  ["処分価格は市場価格の何掛けで見ていますか","競売基準／任意売却基準"],
+  ["エリアで変えますか。変える場合の区分単位","字／小学校区／幹線沿い"],
+  ["那覇市内の具体的な掛け目（例で構いません）",""],
+  ["例外的に上下させるのはどんなときですか",""]]},
+ {t:"E　建物の扱い",q:[
+  ["更地化前提のときの解体費","木造　円/坪／RC　円/坪"],
+  ["建物に価値を認めるのは築何年まで","木造　年／RC　年"],
+  ["賃貸中・居住中の場合の扱い","収益還元も見ますか"]]},
+ {t:"F　既存債権の確認",q:[
+  ["実残債はどう確認していますか","残高証明／返済予定表／申告ベース"],
+  ["登記簿の債権額と実残債の差はどう扱いますか",""],
+  ["先順位者への確認はどの段階で行いますか",""]]},
+ {t:"G　出力の形",q:[
+  ["欲しい出力の形","金額1本／レンジ／可否＋上限額／A・B・C判定"],
+  ["根拠の内訳は表示すべきですか",""],
+  ["この資料を見るのは誰ですか","審査／決裁者／営業"],
+  ["決裁のときに毎回必ず聞かれることは何ですか",""]]},
+ {t:"H　過去の取引履歴（近隣表示用）",q:[
+  ["過去の取引記録はどんな形で残っていますか","Excel／基幹システム／紙／担当者の記憶"],
+  ["いつからの分が残っていますか",""],
+  ["住所・面積・金額・成否は揃っていますか",""],
+  ["見送った案件の記録も残っていますか",""],
+  ["データを読み込ませることは可能ですか",""]]}
+];
+function renderHear(){
+  const H=[]; let n=0;
+  HEAR.forEach(s=>{
+    H.push(`<section class="sec"><h2>${s.t}</h2>`);
+    s.q.forEach(([t,hint])=>{ n++;
+      H.push(`<div class="q"><div class="qt"><em>${String(n).padStart(2,'0')}</em>${t}</div>
+        <textarea data-h="${t}" placeholder="回答"></textarea>
+        ${hint?`<div class="hint">${hint}</div>`:''}</div>`);
+    });
+    H.push(`</section>`);
+  });
+  H.push(`<section class="sec"><h2>ご用意いただきたい資料</h2>
+    <div class="ask"><h4>① 直近でお断りした案件を10件（理由付き）</h4>
+      <p>通した案件よりも社内基準が濃く出ます。この10件があれば、B〜Eの半分は聞かなくても埋まります。</p></div>
+    <div class="ask"><h4>② 直近で融資した案件を5件</h4>
+      <p>住所・面積・建物の有無・評価額・実行額・順位。算定式の答え合わせに使います。</p></div>
+    <div class="ask"><h4>③ 社内の査定基準表・マニュアル</h4>
+      <p>現物があれば。なければ会話で聞き取ります。</p></div>
+    <p class="note">※ 実際にお願いするのはこの3点だけです。A〜Hは会話しながら埋めます。</p>
+  </section>`);
+  $('hearBody').innerHTML=H.join('');
+}
+renderHear();
+
+/* ═══════════ コピー ═══════════ */
+function copyTo(btn,text,label){
+  const done=()=>{const o=btn.textContent;btn.textContent="コピーしました";
+    setTimeout(()=>btn.textContent=o,1600);};
+  if(navigator.clipboard&&window.isSecureContext){navigator.clipboard.writeText(text).then(done,fallback);}
+  else fallback();
+  function fallback(){const ta=document.createElement('textarea');ta.value=text;
+    ta.style.position='fixed';ta.style.opacity='0';document.body.appendChild(ta);
+    ta.select();try{document.execCommand('copy');done();}catch(e){}
+    document.body.removeChild(ta);}
+}
+$('copyBtn').onclick=()=>{
+  const r=calc(),L=[];
+  L.push("【担保評価メモ（社内検討用・自動生成）】",r.head,"");
+  L.push("判定："+r.verdict);
+  if(r.verdict!=="該当なし") L.push("担保余力："+yen(Math.max(0,r.lo))+"〜"+yen(r.hi)+"万円");
+  if(r.reason) L.push("　"+r.reason);
+  L.push("","■ 内訳");
+  L.push("土地　"+$('tsubo').value+"坪 × "+yen(r.unit)+"万/坪 ＝ "+yen(r.land)+"万");
+  if(r.hasB) L.push("建物　"+(r.bldg>0?yen(r.bldg)+"万":"評価ゼロ"));
+  if(r.demo>0) L.push("解体費　−"+yen(r.demo)+"万");
+  if(r.applied.length) L.push("補正　"+r.applied.join("・")+"　"+(r.rate>0?"+":"")+r.rate+"%");
+  L.push("積算評価額　"+yen(r.sekisan)+"万");
+  L.push("処分想定価格（×"+P.shobun+"%）　"+yen(r.shobun)+"万");
+  L.push("担保設定可能額（LTV "+r.ltv+"%）　"+yen(r.cap)+"万");
+  L.push("既存債権（第"+r.juni+"順位）　−"+yen(r.zan)+"万");
+  L.push("担保余力　"+yen(r.yoryoku)+"万","");
+  L.push("■ 確認が必要な点（"+r.ck.length+"件）");
+  r.ck.forEach(c=>L.push("・"+c));
+  L.push("","※ 単価・掛け目は仮置きの基準値による機械的な試算です。");
+  copyTo($('copyBtn'),L.join("\n"));
+};
+$('hearCopy').onclick=()=>{
+  const L=["【ヒアリング記録】",""];
+  HEAR.forEach(s=>{L.push("■ "+s.t);
+    s.q.forEach(([t])=>{const el=document.querySelector(`[data-h="${t}"]`);
+      L.push(t+"： "+((el&&el.value.trim())||"（未記入）"));});
+    L.push("");});
+  copyTo($('hearCopy'),L.join("\n"));
+};
+</script>
+</body>
+</html>
